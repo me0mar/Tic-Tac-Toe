@@ -3,6 +3,7 @@
 #include <iomanip> // std::setw
 #include <iostream>
 #include <string>
+#include <vector>
 
 #ifdef _WIN32 // Check if compiling for Windows
 #define CLEAR_COMMAND "cls"
@@ -22,12 +23,10 @@ struct stInfo {
   short rounds;
   short player1WinningRound = 0;
   short player2WinningRound = 0;
-  string roundWinner;
   bool draw = false;
-  string gameWinner;
 };
 
-string InputName(string message) { // VALIDATION !
+string InputName(string message) {
   string name;
   cout << message;
   cin >> name;
@@ -40,7 +39,7 @@ short HowManyRound(string message) {
   cout << message << " ";
   cin >> inputNum;
   while (inputNum > 10 || inputNum < 1) {
-    cout << "Number must be between 1 and 10 ";
+    cout << "Number must be between 1 and 10, Try again ";
     cin >> inputNum;
   }
   return inputNum;
@@ -53,9 +52,13 @@ void AskNames(stPlayersName &name) {
 
 void HeaderInfo(stPlayersName name, stInfo info, short thisRoundNum) {
   cout << "================================================\n";
-  printf("Round: %d of %d | %s [%d] V %s [%d]\n", thisRoundNum, info.rounds,
-         name.player1Name.c_str(), info.player1WinningRound,
-         name.player2Name.c_str(), info.player2WinningRound);
+  printf("Round: %d of %d | %s [%d] V %s [%d]\n",
+         thisRoundNum,
+         info.rounds,
+         name.player1Name.c_str(),
+         info.player1WinningRound,
+         name.player2Name.c_str(),
+         info.player2WinningRound);
   cout << "================================================\n";
 }
 
@@ -75,34 +78,6 @@ void DisplayBox(char arr[3][3]) {
     cout << "\n";
   }
   cout << "\n\n";
-}
-
-char InputLocation(char userInputNumList[9], string message) {
-  char inputNum = '0';
-  cout << message << " ";
-  cin >> inputNum;
-  for (short i = 0; i < 9; i++) {
-    while (inputNum == userInputNumList[i]) {
-      cout << "Location is reserved, chose different number ";
-      cin >> inputNum;
-      while (inputNum > '9' || inputNum < '1') {
-        cout << "Number must be between 1 and 9 ";
-        cin >> inputNum;
-      }
-    }
-    userInputNumList[i] = inputNum;
-    break;
-  }
-  return inputNum;
-}
-
-bool CheckIfExistInLocation(char userInputNumList[9], char inputLocation) {
-  for (short i = 0; i < 10; i++) {
-    if (userInputNumList[i] == inputLocation) {
-      return true;
-    }
-  }
-  return false;
 }
 
 char SwitchPlayerTurn(stInfo &playerTurn) {
@@ -133,15 +108,6 @@ void UpdateNumBox(char arr[3][3], char userPosition, char playerTurn) {
       }
     }
   }
-}
-
-void PlayGame(char arr[3][3], char userInputNumList[9], stInfo info,
-              char playerTurn, short counter) {
-  DisplayBox(arr);
-  char userPosition = InputLocation(userInputNumList, "Please Enter Number");
-  SwitchPlayerTurn(info);
-  UpdateNumBox(arr, userPosition, playerTurn);
-  system(CLEAR_COMMAND);
 }
 
 bool CheckDigitsIfEqual(char arr[3][3], char XO) {
@@ -177,11 +143,9 @@ bool PlayerWinner(char arr[3][3], stInfo &info) {
   const char PLAYER2 = 'O';
   if (CheckDigitsIfEqual(arr, PLAYER1)) {
     info.player1WinningRound++;
-    cout << info.player1WinningRound;
     return true;
   } else if (CheckDigitsIfEqual(arr, PLAYER2)) {
     info.player2WinningRound++;
-    cout << info.player2WinningRound;
     return true;
   }
   return false;
@@ -210,46 +174,152 @@ bool GameOver(char arr[3][3], stInfo &info) {
   return true;
 }
 
-void ResetBox(char arr[3][3], char userInputNumList[9]) {
+void ResetBox(char arr[3][3], vector<char> &existingNumbers) {
+  existingNumbers.clear();
   arr[0][0] = '1', arr[0][1] = '2', arr[0][2] = '3', arr[1][0] = '4',
   arr[1][1] = '5', arr[1][2] = '6', arr[2][0] = '7', arr[2][1] = '8',
   arr[2][2] = '9';
 }
 
+string FinalWinner(stPlayersName name, stInfo info) {
+  if (info.player1WinningRound > info.player2WinningRound) {
+    return name.player1Name + " The Final Winner\n";
+  } else if (info.player2WinningRound > info.player1WinningRound) {
+    return name.player2Name + " The Final Winner\n";
+  } else {
+    return "NO Winner It\'s Draw\n";
+  }
+}
+
 void DisplayFinalResult(stPlayersName name, stInfo info) {
   cout << "*********************************************\n";
   cout << "Total Rounds: " << info.rounds << "\n";
-  cout << name.player1Name << " Won " << info.player1WinningRound << "\n";
-  cout << name.player2Name << " Won " << info.player2WinningRound << "\n";
+  cout << "Draw: " << info.draw << "\n";
+  cout << name.player1Name << " Win " << info.player1WinningRound << "\n";
+  cout << name.player2Name << " Win " << info.player2WinningRound << "\n";
+  cout << "*********************************************\n";
+  cout << FinalWinner(name, info);
   cout << "*********************************************\n";
 }
 
-int main() {
+short InputNumberPosition(string message) {
+  short inputNum = 0;
+  cout << message << " ";
+  cin >> inputNum;
+  while (inputNum > 9 || inputNum < 1) {
+    cout << "Number must be between 1 and 9, Try again ";
+    cin >> inputNum;
+  }
+  return inputNum;
+}
+
+string AskForNumber(stInfo info, stPlayersName name) {
+  const string player1 = name.player1Name + " please enter number | X |";
+  const string player2 = name.player2Name + " please enter number | O |";
+  if (!info.player1StartFirst) {
+    return player1;
+  }
+  return player2;
+}
+
+short ConvertInputNumberToChar(short number) {
+  if (number == 1) {
+    return 49;
+  } else if (number == 2) {
+    return 50;
+  } else if (number == 3) {
+    return 51;
+  } else if (number == 4) {
+    return 52;
+  } else if (number == 5) {
+    return 53;
+  } else if (number == 6) {
+    return 54;
+  } else if (number == 7) {
+    return 55;
+  } else if (number == 8) {
+    return 56;
+  } else if (number == 9) {
+    return 57;
+  }
+  return 0;
+}
+
+bool CheckArrayIfDubricated(vector<char> &existingNumbers, char &newNumber,
+                            stInfo info, stPlayersName name) {
+  newNumber = char(
+      ConvertInputNumberToChar(InputNumberPosition(AskForNumber(info, name))));
+
+  for (char &num : existingNumbers) {
+    if (num == newNumber) {
+      return true;
+    }
+  }
+  existingNumbers.push_back(newNumber);
+  return false;
+}
+
+void RenderGame(char arr[3][3], vector<char> &existingNumbers, stInfo info,
+                stPlayersName name, char playerTurn) {
+  char newNumber;
+
+  DisplayBox(arr);
+  while (CheckArrayIfDubricated(existingNumbers, newNumber, info, name)) {
+    cout << "Location is taken, Choose another number \n";
+  }
+  char userPosition = newNumber;
+  SwitchPlayerTurn(info);
+  UpdateNumBox(arr, userPosition, playerTurn);
+  system(CLEAR_COMMAND);
+}
+
+void PlayGame(stPlayersName name) {
   char arr[3][3]{{'1', '2', '3'}, {'4', '5', '6'}, {'7', '8', '9'}};
-  char userInputNumList[9]; // for checking if the user entered number already
-                            // exist
-  stPlayersName name;
+  vector<char> existingNumbers; // for checking if the user
+                                // entered number already exist
+  char newNumber;
   stInfo info;
-  short counter = 0;
   short round = 1;
   short totalRounds =
       HowManyRound("Please enter how many round do you want to play 1 to 10");
   info.rounds = totalRounds;
 
-  AskNames(name);
   system(CLEAR_COMMAND);
   while (round <= totalRounds) {
-
     do {
       HeaderInfo(name, info, round);
       playerTurnNotification(info, name);
-      PlayGame(arr, userInputNumList, info, SwitchPlayerTurn(info), counter);
-      counter++;
+      RenderGame(arr, existingNumbers, info, name, SwitchPlayerTurn(info));
     } while (GameOver(arr, info));
     round++;
-    ResetBox(arr, userInputNumList);
+    ResetBox(arr, existingNumbers);
   }
   system(CLEAR_COMMAND);
   DisplayFinalResult(name, info);
+}
+
+bool PlayAgain() {
+  char answer;
+  cout << "Do you want to play again? Y/N ";
+  cin >> answer;
+  while (answer != 'Y' && answer != 'y' && answer != 'N' && answer != 'n') {
+    cout << "Y/y for |YES| OR N/n for |NO| ! ";
+    cin >> answer;
+  }
+  if (answer == 'y' || answer == 'Y') {
+    system(CLEAR_COMMAND);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+int main() {
+  stPlayersName name;
+  AskNames(name);
+  do {
+    PlayGame(name);
+    cout << endl;
+  } while (PlayAgain());
   return 0;
 }
