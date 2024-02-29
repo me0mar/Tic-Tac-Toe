@@ -93,10 +93,10 @@ char SwitchPlayerTurn(stInfo &playerTurn) {
 }
 
 void playerTurnNotification(stInfo playerTurn, stPlayersName name) {
-  if (playerTurn.player1StartFirst) {
-    cout << name.player1Name << " Is Your Turn\n";
+  if (!playerTurn.player1StartFirst) {
+    cout << name.player1Name << " Is Your Turn => | X |\n";
   } else {
-    cout << name.player2Name << " Is Your Turn\n";
+    cout << name.player2Name << " Is Your Turn => | O |\n";
   }
 }
 
@@ -214,8 +214,8 @@ short InputNumberPosition(string message) {
 }
 
 string AskForNumber(stInfo info, stPlayersName name) {
-  const string player1 = name.player1Name + " please enter number | X |";
-  const string player2 = name.player2Name + " please enter number | O |";
+  const string player1 = name.player1Name + " please enter number:";
+  const string player2 = name.player2Name + " please enter number:";
   if (!info.player1StartFirst) {
     return player1;
   }
@@ -264,6 +264,7 @@ void RenderGame(char arr[3][3], vector<char> &existingNumbers, stInfo info,
   char newNumber;
 
   DisplayBox(arr);
+  playerTurnNotification(info, name);
   while (CheckArrayIfDubricated(existingNumbers, newNumber, info, name)) {
     cout << "Location is taken, Choose another number \n";
   }
@@ -288,7 +289,6 @@ void PlayGame(stPlayersName name) {
   while (round <= totalRounds) {
     do {
       HeaderInfo(name, info, round);
-      playerTurnNotification(info, name);
       RenderGame(arr, existingNumbers, info, name, SwitchPlayerTurn(info));
     } while (GameOver(arr, info));
     round++;
